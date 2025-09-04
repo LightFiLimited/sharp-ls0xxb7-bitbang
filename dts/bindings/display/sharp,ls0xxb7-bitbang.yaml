@@ -51,7 +51,7 @@ properties:
     description: VB black signal voltage for LCD, also connected to VCOM.
   va-gpios:
     type: phandle-array
-    required: true
+    required: false
     description: VA, white signal voltage for LCD.
   vcom-freq:
     type: int

@@ -78,11 +78,15 @@ static void vcom_thread(void *config, void *unused1, void *unused2) {
 
   // Ensure out of phase.
   gpio_pin_set_dt(&cfg->vcom_vb, 1);
-  gpio_pin_set_dt(&cfg->va, 0);
+  if (cfg->va.port != NULL) {
+    gpio_pin_set_dt(&cfg->va, 0);
+  }
 
   while (1) {
     gpio_pin_toggle_dt(&cfg->vcom_vb);
-    gpio_pin_toggle_dt(&cfg->va);
+    if (cfg->va.port != NULL) {
+      gpio_pin_toggle_dt(&cfg->va);
+    }
     k_msleep(1000 / cfg->vcom_freq);
   }
 }
@@ -135,7 +139,9 @@ static int sharp_mip_init(const struct device *dev) {
   }
 
   SET_GPIO_OUTPUT(ret, config->vcom_vb);
-  SET_GPIO_OUTPUT(ret, config->va);
+  if (config->va.port != NULL) {
+    SET_GPIO_OUTPUT(ret, config->va);
+  }
   k_thread_create(&data->vcom_thread, data->vcom_thread_stack,
                   K_KERNEL_STACK_SIZEOF(data->vcom_thread_stack),
                   (k_thread_entry_t)vcom_thread, /*arg1=*/(void *)config,
@@ -422,7 +428,7 @@ struct display_driver_api sharp_mip_driver_api = {
               GPIO_DT_SPEC_GET_BY_IDX(node_id, rgb_gpios, 4),      \
               GPIO_DT_SPEC_GET_BY_IDX(node_id, rgb_gpios, 5)},     \
       .vcom_vb = GPIO_DT_SPEC_GET(node_id, vb_gpios),              \
-      .va = GPIO_DT_SPEC_GET(node_id, va_gpios),                   \
+      .va = GPIO_DT_SPEC_GET_OR(node_id, va_gpios, {0}),           \
       .vcom_freq = DT_PROP(node_id, vcom_freq),                    \
   };                                                               \
   DEVICE_DT_DEFINE(node_id, sharp_mip_init, NULL, &data_##node_id, \
