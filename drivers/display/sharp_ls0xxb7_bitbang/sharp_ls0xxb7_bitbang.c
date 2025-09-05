@@ -1,7 +1,6 @@
 /*
 
-Bit-banging driver for Sharp LS0XXB7 displays. It currently only works with the
-LS014B7DD01 display.
+Bit-banging driver for Sharp LS0XXB7 displays.
 
 Copyright © 2025 rbaron
 
@@ -288,21 +287,25 @@ static inline void clear(const struct gpio_dt_spec *gpio) {
 static inline void send_half_line(bool is_msb, const void *buf,
                                   const struct sharp_mip_config *cfg,
                                   const struct sharp_mip_data *data) {
-  for (int i = 1; i <= 144; i++) {
+  // Calculate total cycles based on display height
+  const int pixel_cycles = cfg->width / 2;
+  const int total_cycles = (cfg->width / 2) + 4;
+
+  for (int i = 1; i <= total_cycles; i++) {
     // Toggle BCK: 1 on odd, 0 on even.
     gpio_pin_set_raw(cfg->bck.port, cfg->bck.pin, i & 1);
 
     if (i == 2) {
       clear(&cfg->bsp);
     }
-    if (i >= 1 && i <= 140) {
+    if (i >= 1 && i <= pixel_cycles) {
       // Prepare RGB pins for the next BCK edge.
       set_rgb(is_msb, /*x0=*/(i - 1) << 1, buf, cfg, data);
     }
-    if (i == 142) {
+    if (i == pixel_cycles + 2) {
       set(&cfg->gen);
     }
-    if (i == 144) {
+    if (i == pixel_cycles + 4) {
       clear(&cfg->gen);
       clear(&cfg->gck);
       set(&cfg->bsp);
@@ -340,8 +343,11 @@ static int sharp_mip_write(const struct device *dev, const uint16_t x,
       x, y, desc->buf_size, desc->height, desc->width, gck_offset,
       gck_last_half_line);
 
+  // Calculate total cycles based on display height
+  const int total_cycles = cfg->height * 2 + 8;
+
   // 1-indexed to match the datasheet and improve debugging.
-  for (int i = 1; i <= 568; i++) {
+  for (int i = 1; i <= total_cycles; i++) {
     gpio_pin_set_raw(cfg->gck.port, cfg->gck.pin, i & 1);
 
     if (i == 2) {
@@ -367,9 +373,9 @@ static int sharp_mip_write(const struct device *dev, const uint16_t x,
 
       send_half_line(is_msb, line_buf, cfg, dev->data);
 
-    } else if (i == 566) {
+    } else if (i == total_cycles - 2) {
       clear(&cfg->intb);
-    } else if (i == 568) {
+    } else if (i == total_cycles) {
       set(&cfg->intb);
       set(&cfg->gsp);
     }
