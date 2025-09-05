@@ -1,4 +1,7 @@
-This is a work in progress, experimental Zephyr bit-bang driver for the Sharp LS0XXB7 series of memory-in-pixel displays. It currently only supports the LS014B7DD01 model.
+This is a work in progress, experimental Zephyr bit-bang driver for the Sharp LS0XXB7 series of memory-in-pixel displays. It currently supports:
+ - LS021B7DD02 (320x240)
+ - LS014B7DD01 (280x280)
+ - ...
 
 # Using the driver
 This is a fork of the [nrfconnect/ncs-example-application](https://github.com/nrfconnect/ncs-example-application) template:
