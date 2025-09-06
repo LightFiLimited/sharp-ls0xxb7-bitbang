@@ -343,6 +343,11 @@ static int sharp_mip_write(const struct device *dev, const uint16_t x,
       x, y, desc->buf_size, desc->height, desc->width, gck_offset,
       gck_last_half_line);
 
+  // TODO: check whether this can be moved to init function?
+  clear(&cfg->gck);
+  set(&cfg->intb);
+  set(&cfg->gsp);
+
   // Calculate total cycles based on display height
   const int total_cycles = cfg->height * 2 + 8;
 
@@ -372,7 +377,9 @@ static int sharp_mip_write(const struct device *dev, const uint16_t x,
 #endif  // CONFIG_SHARP_LS0XXB7_DISPLAY_MODE
 
       send_half_line(is_msb, line_buf, cfg, dev->data);
-
+    } else if (i == gck_last_half_line + 1) {
+      set(&cfg->gen);
+      clear(&cfg->gen);
     } else if (i == total_cycles - 2) {
       clear(&cfg->intb);
     } else if (i == total_cycles) {
